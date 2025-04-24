@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { loginUser, getCurrentUser } from '../services/authService'
+import { updateUserProfile } from '../services/userService'
 
 const AuthContext = createContext()
 
@@ -42,18 +43,13 @@ export function AuthProvider({ children }) {
   }
 
   const updateProfile = async (userData) => {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/users/profile', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(userData),
-    })
-    const updatedUser = await response.json()
-    setUser(updatedUser)
-    return updatedUser
+    try {
+      const updatedUser = await updateUserProfile(userData)
+      setUser(updatedUser)
+      return updatedUser
+    } catch (error) {
+      throw error
+    }
   }
 
   const value = {

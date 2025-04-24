@@ -1,51 +1,78 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { fetchUserStats } from '../../services/userService.js'
-import { FaSeedling, FaUsers, FaExchangeAlt, FaPlus } from 'react-icons/fa'
+import { fetchUserStats } from '../../services/userService'
+import { FaSeedling, FaUsers, FaExchangeAlt, FaPlus, FaEnvelope } from 'react-icons/fa'
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const [stats, setStats] = useState({
     totalSeeds: 0,
     activeExchanges: 0,
-    connections: 0
+    unreadMessages: 0,
+    totalMessages: 0
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    let isMounted = true
+
     const loadStats = async () => {
+      if (!user) return
+      
       try {
+        setLoading(true)
+        setError(null)
         const data = await fetchUserStats()
-        setStats(data)
+        
+        if (isMounted) {
+          setStats(data)
+        }
       } catch (err) {
-        setError(err.message)
-        console.error('Failed to fetch stats:', err)
+        if (isMounted) {
+          console.error('Failed to fetch stats:', err)
+          setError('Failed to load statistics')
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
     loadStats()
-  }, [])
+    
+    // Cleanup function
+    return () => {
+      isMounted = false
+    }
+  }, [user])
+
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600">Please log in to view your dashboard</p>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
       </div>
     )
   }
 
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {error && (
+        <div className="mb-8 bg-red-50 border-l-4 border-red-400 p-4 rounded">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293-1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
             </div>
             <div className="ml-3">
@@ -53,12 +80,8 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>
-    )
-  }
+      )}
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">
@@ -75,6 +98,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Stats Cards */}
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
@@ -92,11 +116,6 @@ export default function DashboardPage() {
                 </dl>
               </div>
             </div>
-          </div>
-          <div className="bg-gray-50 px-5 py-3">
-            <Link to="/seeds" className="text-sm text-green-700 hover:text-green-900">
-              View all seeds
-            </Link>
           </div>
         </div>
 
@@ -118,46 +137,25 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 px-5 py-3">
-            <Link to="/exchanges" className="text-sm text-green-700 hover:text-green-900">
-              View exchanges
-            </Link>
-          </div>
         </div>
 
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <FaUsers className="h-6 w-6 text-green-600" />
+                <FaEnvelope className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Connections
+                    Messages
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {stats.connections}
+                    {stats.unreadMessages} unread
                   </dd>
                 </dl>
               </div>
             </div>
-          </div>
-          <div className="bg-gray-50 px-5 py-3">
-            <Link to="/connections" className="text-sm text-green-700 hover:text-green-900">
-              View connections
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity Section */}
-      <div className="mt-8">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h2>
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          {/* Add recent activity items here */}
-          <div className="px-4 py-5 sm:p-6">
-            <p className="text-gray-500 text-center">No recent activity</p>
           </div>
         </div>
       </div>

@@ -1,58 +1,90 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import SeedCard from '../../components/Common/SeedCard'
 import { getSeeds } from '../../services/seedService'
-import { FaFilter, FaSearch } from 'react-icons/fa'
+import { FaFilter, FaSearch, FaPlus } from 'react-icons/fa'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function SeedsPage() {
+  const { user } = useAuth()
   const [seeds, setSeeds] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     category: '',
     exchangeType: '',
-    season: ''
   })
 
   useEffect(() => {
     const fetchSeeds = async () => {
       try {
+        setLoading(true)
         const data = await getSeeds()
         setSeeds(data)
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching seeds:', error)
+        setError('')
+      } catch (err) {
+        setError('Failed to fetch seeds')
+        console.error('Error fetching seeds:', err)
+      } finally {
         setLoading(false)
       }
     }
+
     fetchSeeds()
-  }, [])
+  }, []) // Refresh seeds when page loads
 
   const filteredSeeds = seeds.filter(seed => {
-    const matchesSearch = seed.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         seed.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = !filters.category || seed.category === filters.category
-    const matchesExchangeType = !filters.exchangeType || seed.exchangeType === filters.exchangeType
-    const matchesSeason = !filters.season || seed.season === filters.season
+    const matchesSearch = seed.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         seed.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         seed.varietyName?.toLowerCase().includes(searchTerm.toLowerCase())
     
-    return matchesSearch && matchesCategory && matchesExchangeType && matchesSeason
+    const matchesCategory = !filters.category || seed.category === filters.category
+    const matchesListingType = !filters.exchangeType || seed.listingType === filters.exchangeType
+    
+    return matchesSearch && matchesCategory && matchesListingType
   })
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading seeds...</p>
-      </div>
-    )
+  // Update the filter component options to match the schema:
+  const filterOptions = {
+    category: [
+      { value: '', label: 'All Categories' },
+      { value: 'vegetable', label: 'Vegetable' },
+      { value: 'herb', label: 'Herb' },
+      { value: 'flower', label: 'Flower' },
+      { value: 'tree', label: 'Tree' },
+      { value: 'fruit', label: 'Fruit' },
+      { value: 'grain', label: 'Grain' },
+      { value: 'other', label: 'Other' }
+    ],
+    listingType: [
+      { value: '', label: 'All Types' },
+      { value: 'sale', label: 'For Sale' },
+      { value: 'exchange', label: 'For Exchange' },
+      { value: 'free', label: 'Free' },
+      { value: 'wanted', label: 'Wanted' }
+    ]
   }
 
+  // Update the filter dropdowns:
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Browse Native Seeds</h1>
-        <p className="text-gray-600">
-          Discover seeds available for exchange, donation, or request in your community.
-        </p>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Browse Native Seeds</h1>
+          <p className="text-gray-600">
+            Discover seeds available for exchange, donation, or request in your community.
+          </p>
+        </div>
+        {user && (
+          <Link
+            to="/seeds/new"
+            className="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
+          >
+            <FaPlus className="mr-2" />
+            Add New Seed
+          </Link>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-md p-4 mb-8">
@@ -67,41 +99,63 @@ export default function SeedsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col md:flex-row items-center gap-2">
             <select
               className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               value={filters.category}
               onChange={(e) => setFilters({...filters, category: e.target.value})}
             >
-              <option value="">All Categories</option>
-              <option value="vegetable">Vegetable</option>
-              <option value="fruit">Fruit</option>
-              <option value="herb">Herb</option>
-              <option value="flower">Flower</option>
-              <option value="tree">Tree</option>
+              {filterOptions.category.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
             <select
               className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               value={filters.exchangeType}
               onChange={(e) => setFilters({...filters, exchangeType: e.target.value})}
             >
-              <option value="">All Types</option>
-              <option value="exchange">Exchange</option>
-              <option value="donate">Donate</option>
-              <option value="request">Request</option>
+              {filterOptions.listingType.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
-            <button className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
-              <FaFilter />
-              <span>Filter</span>
-            </button>
           </div>
         </div>
       </div>
 
-      {filteredSeeds.length === 0 ? (
+      {/* ... keep existing grid and loading/error states ... */}
+      
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
+          <p className="mt-4 text-gray-500">Loading seeds...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+            <p className="text-red-700">{error}</p>
+          </div>
+        </div>
+      ) : filteredSeeds.length === 0 ? (
         <div className="text-center py-12">
           <h3 className="text-xl font-semibold text-gray-700 mb-2">No seeds found</h3>
-          <p className="text-gray-500">Try adjusting your search or filters</p>
+          <p className="text-gray-500 mb-4">
+            {searchTerm || filters.category || filters.exchangeType 
+              ? 'Try adjusting your search or filters'
+              : 'Be the first to add seeds to the community!'}
+          </p>
+          {user && (
+            <Link
+              to="/seeds/new"
+              className="inline-flex items-center bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition"
+            >
+              <FaPlus className="mr-2" />
+              Add New Seed
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

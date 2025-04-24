@@ -25,6 +25,31 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  phone: {
+    type: String,
+    trim: true
+  },
+  website: {
+    type: String,
+    trim: true
+  },
+  bio: {
+    type: String,
+    maxLength: 500
+  },
+  rating: {
+    type: Number,
+    min: 0,
+    max: 5
+  },
+  activeListings: {
+    type: Number,
+    default: 0
+  },
+  completedTrades: {
+    type: Number,
+    default: 0
   }
 })
 

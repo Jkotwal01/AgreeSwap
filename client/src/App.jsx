@@ -7,9 +7,15 @@ import RegisterPage from './pages/Auth/RegisterPage'
 import DashboardPage from './pages/Dashboard/DashboardPage'
 import SeedsPage from './pages/Seeds/SeedsPage'
 import SeedDetailPage from './pages/Seeds/SeedDetailPage'
-import ProfilePage from './pages/Dashboard/ProfilePage'
+import NewSeedPage from './pages/Seeds/NewSeedPage'
+import ProfilePage from './pages/Profile/ProfilePage'
+import EditProfilePage from './pages/Profile/EditProfilePage'
+import MessagesPage from './pages/Messages/MessagesPage'
+
 import Navbar from './components/Common/Navbar'
 import Footer from './components/Common/Footer'
+import { Link } from 'react-router-dom'
+import { FaEnvelope } from 'react-icons/fa'
 
 function App() {
   return (
@@ -25,7 +31,23 @@ function App() {
               <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
               <Route path="/seeds" element={<SeedsPage />} />
               <Route path="/seeds/:id" element={<SeedDetailPage />} />
-              <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+              <Route 
+                path="/profile" 
+                element={<PrivateRoute><ProfilePage /></PrivateRoute>} 
+              />
+              <Route 
+                path="/profile/edit" 
+                element={<PrivateRoute><EditProfilePage /></PrivateRoute>} 
+              />
+              <Route 
+                path="/seeds/new" 
+                element={<PrivateRoute><NewSeedPage /></PrivateRoute>} 
+              />
+              <Route path="/messages" element={
+                <PrivateRoute>
+                  <MessagesPage />
+                </PrivateRoute>
+              } />
             </Routes>
           </main>
           <Footer />

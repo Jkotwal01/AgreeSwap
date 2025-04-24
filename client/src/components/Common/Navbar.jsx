@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { FaLeaf, FaUser, FaSignOutAlt, FaSignInAlt, FaUserPlus } from 'react-icons/fa'
+import { FaLeaf, FaUser, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaEnvelope } from 'react-icons/fa'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -26,7 +26,13 @@ export default function Navbar() {
             <>
               <Link to="/dashboard" className="hover:text-green-200 transition">Dashboard</Link>
               <div className="flex items-center space-x-2">
-                <span className="hidden md:inline">Hi, {user.name}</span>
+                <Link 
+                  to="/profile" 
+                  className="flex items-center space-x-1 bg-green-800 hover:bg-green-900 px-3 py-1 rounded transition"
+                >
+                  <FaUser />
+                  <span className="hidden md:inline">{user.name}</span>
+                </Link>
                 <button 
                   onClick={handleLogout}
                   className="flex items-center space-x-1 bg-green-800 hover:bg-green-900 px-3 py-1 rounded transition"

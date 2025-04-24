@@ -7,7 +7,10 @@ const router = express.Router()
 // Get all seeds
 router.get('/', async (req, res) => {
   try {
-    const seeds = await Seed.find().populate('owner', 'name email')
+    const seeds = await Seed.find()
+      .populate('owner', 'name email location')
+      .sort({ createdAt: -1 })
+      .exec()
     res.json(seeds)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -19,44 +22,67 @@ router.get('/:id', async (req, res) => {
   try {
     const seed = await Seed.findById(req.params.id)
       .populate('owner', 'name email location')
-      .exec()
-      
+    
     if (!seed) {
       return res.status(404).json({ message: 'Seed not found' })
     }
 
-    res.json({
-      _id: seed._id,
-      name: seed.name,
-      description: seed.description,
-      category: seed.category,
-      exchangeType: seed.exchangeType,
-      quantity: seed.quantity,
-      location: seed.location,
-      availableUntil: seed.availableUntil,
-      imageURL: seed.imageURL,
-      owner: seed.owner,
-      createdAt: seed.createdAt
-    })
+    res.json(seed)
   } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid seed ID' })
+    console.error('Error fetching seed:', error)
+    if (error.kind === 'ObjectId') {
+      return res.status(404).json({ message: 'Invalid seed ID format' })
     }
-    res.status(500).json({ message: error.message })
+    res.status(500).json({ message: 'Error fetching seed details' })
   }
 })
 
-// Create seed
+// Update the create seed route
 router.post('/', auth, async (req, res) => {
   try {
-    const seed = new Seed({
-      ...req.body,
-      owner: req.user._id
+    console.log('Received seed creation request:', {
+      body: req.body,
+      user: req.user._id
     })
+
+    // Create seed data with owner
+    const seedData = {
+      ...req.body,
+      owner: req.user._id,
+      imageURL: req.body.imageURL || 'https://via.placeholder.com/400?text=No+Image'
+    }
+
+    // Create and save the seed
+    const seed = new Seed(seedData)
     await seed.save()
+
+    // Populate owner details
+    await seed.populate('owner', 'name email location')
+    
+    console.log('Seed created successfully:', {
+      _id: seed._id,
+      title: seed.title,
+      owner: seed.owner._id
+    })
+
+    // Send back the created seed
     res.status(201).json(seed)
   } catch (error) {
-    res.status(400).json({ message: error.message })
+    console.error('Seed creation error:', {
+      message: error.message,
+      stack: error.stack,
+      errors: error.errors
+    })
+
+    // Send detailed error response
+    res.status(400).json({
+      message: 'Failed to create seed listing',
+      details: error.message,
+      validationErrors: error.errors ? Object.keys(error.errors).map(key => ({
+        field: key,
+        message: error.errors[key].message
+      })) : undefined
+    })
   }
 })
 

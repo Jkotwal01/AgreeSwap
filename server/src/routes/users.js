@@ -2,47 +2,45 @@ import express from 'express'
 import { auth } from '../middleware/auth.js'
 import User from '../models/User.js'
 import Seed from '../models/Seed.js'
+import Message from '../models/Message.js'
 
 const router = express.Router()
 
-// Update user profile
-router.put('/profile', auth, async (req, res) => {
-  try {
-    const updates = Object.keys(req.body)
-    const allowedUpdates = ['name', 'email', 'password', 'location']
-    const isValidOperation = updates.every(update => allowedUpdates.includes(update))
-
-    if (!isValidOperation) {
-      return res.status(400).json({ message: 'Invalid updates' })
-    }
-
-    updates.forEach(update => req.user[update] = req.body[update])
-    await req.user.save()
-    res.json(req.user)
-  } catch (error) {
-    res.status(400).json({ message: error.message })
-  }
-})
-
-// Get user stats
+// Add stats endpoint
 router.get('/stats', auth, async (req, res) => {
   try {
-    // Count total seeds owned by user
-    const totalSeeds = await Seed.countDocuments({ owner: req.user._id })
-    
-    // For now, return placeholder values for exchanges and connections
-    // until those models are implemented
-    const activeExchanges = 0
-    const connections = 0
+    const userId = req.user._id
+
+    // Get stats in parallel
+    const [seedCount, exchangeCount, messageCount] = await Promise.all([
+      // Total seeds
+      Seed.countDocuments({ owner: userId }),
+      
+      // Active exchanges
+      Seed.countDocuments({ 
+        owner: userId, 
+        listingType: { $in: ['exchange', 'trade'] },
+        status: 'active'
+      }),
+      
+      // Unread messages
+      Message.countDocuments({
+        receiver: userId,
+        read: false
+      })
+    ])
 
     res.json({
-      totalSeeds,
-      activeExchanges,
-      connections
+      totalSeeds: seedCount,
+      activeExchanges: exchangeCount,
+      unreadMessages: messageCount,
+      totalMessages: messageCount // You can modify this based on your needs
     })
   } catch (error) {
-    res.status(500).json({ message: error.message })
+    console.error('Error fetching user stats:', error)
+    res.status(500).json({ message: 'Failed to fetch user statistics' })
   }
 })
 
+// ... other routes
 export default router

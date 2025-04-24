@@ -1,10 +1,36 @@
 import { Link } from 'react-router-dom'
 import { FaSeedling, FaExchangeAlt, FaHandsHelping, FaSearch } from 'react-icons/fa'
 import heroImage from '../assets/farm.jpg'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function HomePage() {
+  const { user } = useAuth()
+
   return (
     <div>
+      {user && (
+        <section className="bg-green-50 py-8">
+          <div className="container mx-auto px-4">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-2xl font-bold mb-4">Welcome back, {user.name}!</h2>
+              <div className="flex space-x-4">
+                <Link
+                  to="/dashboard"
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                >
+                  Go to Dashboard
+                </Link>
+                <Link
+                  to="/profile"
+                  className="bg-green-100 text-green-700 px-4 py-2 rounded hover:bg-green-200 transition"
+                >
+                  View Profile
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
       {/* Hero Section */}
       <section className="relative bg-green-700 text-white py-20 overflow-hidden">
         {/* Background Pattern Overlay */}
